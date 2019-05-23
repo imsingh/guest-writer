@@ -122,7 +122,7 @@ Inside the `./src/pages/player` directory, you will find the `player.component.h
 
 Besides the header, you will have the div with class `content` which will have your app's logo and a `mat-list` with the list of media files.
 
-Finally, in the footer, you will have two `mat-toobar`. 
+Finally, in the footer, you will have two `mat-toolbar`. 
 
 In the first `mat-toolbar`, you will have a `mat-slider`. This will allow the user to change the current time of the audio track. 
 
@@ -500,7 +500,7 @@ private resetState() {
 
 ### Reading the state
 
-You are going to need a method to share the `statChange` BehaviorSubject to the rest of the application as follows:
+You are going to need a method to share the `stateChange` BehaviorSubject to the rest of the application as follows:
 
 ```ts
 export class AudioService {
@@ -649,7 +649,7 @@ export class PlayerComponent {
 }
 ```
 #### `playStream` Method
-Then, the `playstream` method can fire the `playStream` method of your `AudioService`. This method on the service returns an observable that you will use to subscribe and start listening to media events like `canplay`, `playing`, etc. However, you don't really need those values or events. Because you can read them using `statChange` subject. This method is used to start observable and audio playback.
+Then, the `playstream` method can fire the `playStream` method of your `AudioService`. This method on the service returns an observable that you will use to subscribe and start listening to media events like `canplay`, `playing`, etc. However, you don't really need those values or events. Because you can read them using the `stateChange` subject. This method is used to start observable and audio playback.
 
 ```ts
 // ... import statements and @Component declaration ...
