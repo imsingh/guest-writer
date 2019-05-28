@@ -108,6 +108,7 @@ const modules = [
 })
 export class MaterialModule {}
 ```
+> You have to add `MaterialModule` to the root `NgModule` to make it work.
 
 Then, you are going to create the `app-player` component with @angular/cli:
 
