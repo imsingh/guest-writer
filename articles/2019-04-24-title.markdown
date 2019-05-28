@@ -113,7 +113,7 @@ export class MaterialModule {}
 Then, you are going to create the `app-player` component with @angular/cli:
 
 ```bash
-ng generate component pages/player
+ng generate component pages/player --module app
 ```
 It will generate `player` component in `pages/player` directory.
 
@@ -133,17 +133,15 @@ In the second `mat-toolbar`, you will have rest of the playback controls, as fol
 <div class="container">
     <mat-toolbar color="primary" class="main-toolbar">
       <span>Audio Player</span>
-      <span class="spacer"></span>
-      <span class="toolbar-btn" *ngIf="auth.authenticated" routerLink="/profile">PROFILE</span>
     </mat-toolbar>
-  
-    <div class="content"
-      <div class="logo">
-        <mat-icon>music_note</mat-icon>
-        <div>Audio Player</div>
+
+    <div class="content">
+        <div class="logo">
+          <mat-icon>music_note</mat-icon>
+          <div>Audio Player</div>
       </div>
-  
-      <mat-list color="primary" *ngIf="auth.authenticated">
+
+      <mat-list color="primary">
         <h3 mat-subheader>Songs</h3>
         <mat-list-item *ngFor="let file of files; let i = index" (click)="openFile(file, i)">
           <mat-icon color="primary" mat-list-icon>music_note</mat-icon>
@@ -155,34 +153,35 @@ In the second `mat-toolbar`, you will have rest of the playback controls, as fol
         </mat-list-item>
       </mat-list>
     </div>
-  
+
     <div class="media-footer">
       <mat-toolbar color="primary">
         <mat-toolbar-row>
-           {{ state?.readableCurrentTime }} 
-           <mat-slider class="time-slider" min="0" [max]="state?.duration" step="1" [value]="state?.currentTime" (input)="onSliderChangeEnd($event)" [disabled]="state?.error || currentFile.index === undefined"></mat-slider> 
+           {{ state?.readableCurrentTime }}
+           <mat-slider class="time-slider" min="0" [max]="state?.duration" step="1" [value]="state?.currentTime" (input)="onSliderChangeEnd($event)" [disabled]="state?.error || currentFile.index === undefined"></mat-slider>
            {{ state?.readableDuration }}
         </mat-toolbar-row>
-  
+
         <mat-toolbar-row class="media-action-bar">
           <button mat-button [disabled]="isFirstPlaying()" (click)="previous()">
             <mat-icon mat-list-icon>skip_previous</mat-icon>
           </button>
-          
+
           <button mat-button (click)="play()" [disabled]="state?.error" *ngIf="!state?.playing">
             <mat-icon mat-list-icon>play_circle_filled</mat-icon>
           </button>
-  
+
           <button mat-button (click)="pause()" *ngIf="state?.playing">
             <mat-icon mat-list-icon>pause</mat-icon>
           </button>
-  
+
           <button  mat-button [disabled]="isLastPlaying()" (click)="next()">
             <mat-icon mat-list-icon>skip_next</mat-icon>
           </button>
         </mat-toolbar-row>
       </mat-toolbar>
     </div>
+</div>
 
 {% endhighlight %}
 
@@ -261,6 +260,34 @@ export class PlayerComponent {
 }
 ```
 
+### Updating Routing
+In order to see the UI, you need to configure the routing inside the `app-routing.module.ts` file to add `PlayerComponent`, as follows:
+
+```ts
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { PlayerComponent } from './pages/player/player.component';
+
+const routes: Routes = [
+    { path: '', component: PlayerComponent },
+    { path: '**', redirectTo: '' }
+];
+
+@NgModule({
+    imports: [
+      RouterModule.forRoot(routes)
+    ],
+    exports: [ RouterModule],
+})
+export class AppRoutingModule {}
+```
+
+You also have to update `app.component.html` with the following content:
+
+{% highlight html %}
+<router-outlet></router-outlet>
+{% endhighlight %}
+
 ## Creating a Service to Manage the Playback
 
 After creating the Audio Player UI, you can start working on the playback feature.
@@ -288,7 +315,7 @@ In your audio player app, you are going to create an observable to get notificat
 Now that you understand why do you need an observable, you can start by creating service in your Angular app:
 
 ```bash
-ng generate services/audio
+ng generate service services/audio
 ```
 
 This will generate service in a file called `audio.service.ts` under `./src/services/audio/` and this service have to be added to `NgModule` in `app.module.ts`. Replace the contents of the `audio.service.ts` file with:
@@ -549,7 +576,7 @@ You can check the final version of `AudioService` [here.](https://github.com/ims
 After managing the state of the application, you will need to create a service to get a list of files. To do so, you can create a cloud service using Angular:
 
 ```bash
-ng generate services/cloud
+ng generate service services/cloud
 ```
 
 This command will generate service in a file called `cloud.service.ts` under `./src/services`. Now, replace the contents of this file with:
@@ -784,28 +811,6 @@ export class PlayerComponent {
 }
 ```
 
-### Updating Routing Module
-You need to configure the routing inside the `app-routing.module.ts` file:
-
-```ts
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { PlayerComponent } from './pages/player/player.component';
-
-const routes: Routes = [
-    { path: '', component: PlayerComponent },
-    { path: '**', redirectTo: '' }
-];
-
-@NgModule({
-    imports: [
-      RouterModule.forRoot(routes)
-    ],
-    exports: [ RouterModule],
-})
-export class AppRoutingModule {}
-```
-
 ### Updating `AppModule`
 The final steps, before being able to use your app for the first time, start with importing all the required libraries inside the `app.module.ts` file:
 
@@ -897,7 +902,13 @@ This list explains what these values mean:
 * `logoutUrl`: It's your URL that you want your user to direct when he/she log out.
 
 ### Auth Service
-After creating your Auth0 account and defining the auth0 config in environment file, you will need to define an authentication service in your Angular app. As such, create a new file called `auth.service.ts`in the same `./src/services/auth/` directory and add the following content to it:
+After creating your Auth0 account and defining the auth0 config in environment file, you will need to define an authentication service in your Angular app. To do so, you will use `@angular/cli`:
+
+```bash
+ng generate service services/auth
+```
+
+This command will generate service in a file called `auth.service.ts` under `./src/services`. Now, replace the contents of this file with:
 
 ```ts
 import { Injectable } from '@angular/core';
@@ -1078,6 +1089,7 @@ export class AuthGuard implements CanActivate {
     }
   }
 }
+
 ```
 
 It basically checks if the user is logged in or not. If the user is logged in, it allows the user to access the given route otherwise redirect the user to `/` route.
@@ -1092,7 +1104,7 @@ Now that you have created the AuthService and AuthGuard. You can use it to add A
 First, you are going to create an extra page for the player. You are going to add user profile information on that page. You will use `@angular/cli`:
 
 ```bash
-ng g component pages/profile
+ng g component pages/profile --module app
 ```
 Open the `profile.component.ts` file in `pages/profile` directory and add the following content:
 
@@ -1115,7 +1127,6 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
   }
-
 }
 ```
 
@@ -1157,7 +1168,7 @@ User can access this component at `/profile` URL.
 > You have to add this route to `router` config in the `app-routing.module.ts` file. You also have to add `ProfileComponent` to the `declaration` and `entryComponent` arrays of `NgModule`
 
 #### Updating Player Component
-In the last step, you have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `mat-toolbar` in the header as follows:
+You also have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `mat-toolbar` in the header as follows:
 
 {% highlight html %}
 <mat-toolbar color="primary" class="main-toolbar">
@@ -1168,6 +1179,46 @@ In the last step, you have to update the player component by adding the Authenti
   <span class="toolbar-btn" *ngIf="auth.authenticated" routerLink="/profile">PROFILE</span>
 </mat-toolbar>
 {% endhighlight }
+
+Along with Toolbar, you have to hide the playlist if user is not logged in. You can simply add `*ngIf="auth.authenticated"` to the playlist as follows:
+
+{% highlight html %}
+<mat-list color="primary" *ngIf="auth.authenticated">
+  <h3 mat-subheader>Songs</h3>
+  <mat-list-item *ngFor="let file of files; let i = index" (click)="openFile(file, i)">
+    <mat-icon color="primary" mat-list-icon>music_note</mat-icon>
+    <h4 mat-line>{{ file.name }}</h4>
+    <h5 mat-line>by {{ file.artist }}</h5>
+    <mat-icon color="primary" *ngIf="currentFile.index === i && !state?.error">volume_up</mat-icon>
+    <h6 *ngIf="currentFile.index === i && state?.error">ERROR</h6>
+    <mat-divider></mat-divider>
+  </mat-list-item>
+</mat-list>
+{% endhighlight }
+
+> Don't forget to import and inject `AuthService` in the `PlayerComponent`.
+
+### Updating AppComponent
+
+Finally, you have to update the `app.component.ts` file to handle authentication as follows:
+
+```ts
+import { Component } from '@angular/core';
+import { AuthService } from './services/auth.service';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss']
+})
+export class AppComponent {
+  constructor(public auth: AuthService) {
+    auth.renewAuth();
+    auth.handleLoginCallback();
+  }
+}
+```
+
 
 #### Running
 
@@ -1181,6 +1232,6 @@ ng serve
 
 In this article, you created an audio player app with Angular. You used RxJS to develop audio playback features and state management. Besides that, you also used Auth0 to handle user authentication in your  app. With this, you have finished developing the application with static audio content.
 
-/* comment */ About Next part or further instructions here
+/** comment About Next part or further instructions here **/ 
 
 I hope you enjoyed this article. Stay tuned for the next part!
