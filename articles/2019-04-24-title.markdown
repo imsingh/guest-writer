@@ -64,10 +64,12 @@ npm start
 
 ### Installing Project Dependencies
 
-Having confirmed that you can run the basic app in the browser, you can start by installing the dependencies. To build your audio player, you will use the Angular Material. You can install it using `ng add` command:
+Having confirmed that you can run the basic app in the browser, you can start building this app by installing the dependencies. To build your audio player, you will use the Angular Material Library. You can install it using the `ng add` command:
 
 ```bash
 ng add @angular/material
+# if using npx, use the following command instead
+# npx @angular/cli add @angular/material
 ```
 This command will ask you three questions:
 
@@ -119,10 +121,12 @@ export class MaterialModule {}
 ```
 > You have to add `MaterialModule` to the root `NgModule` to make it work.
 
-Then, you are going to create the `app-player` component with @angular/cli:
+Then, you are going to create the `app-player` component using the `@angular/cli`:
 
 ```bash
 ng generate component pages/player --module app
+# If you are using npx, use the following command
+# npx @angular/cli generate component pages/player --module app
 ```
 It will generate a `player.component.ts` file and other required files within the `src/app/pages/player/` directory.
 
@@ -331,6 +335,8 @@ Now that you understand why do you need an observable, you can start by creating
 
 ```bash
 ng generate service services/audio
+# if using npx, use the following command instead
+# npx @angular/cli generate service services/audio
 ```
 
 This will generate service in a file called `audio.service.ts` under `./src/services/audio/` and this service have to be added to `NgModule` in `app.module.ts`. Replace the contents of the `audio.service.ts` file with:
@@ -441,6 +447,8 @@ In order to take more advantage of TypeScript's type checking; first, you are go
 
 ```bash
 ng g interface interfaces/streamState
+# if using npx, use the following command instead
+# npx @angular/cli generate interface interfaces/streamState
 ```
 
 This will generate an interface in a file called `stream-state.ts` under `./src/interfaces/`. Replace the content of the file with the following:
@@ -592,6 +600,8 @@ After managing the state of the application, you will need to create a service t
 
 ```bash
 ng generate service services/cloud
+# if using npx, use the following command instead
+# npx @angular/cli generate service services/cloud
 ```
 
 This command will generate service in a file called `cloud.service.ts` under `./src/services`. Now, replace the contents of this file with:
@@ -921,6 +931,8 @@ After creating your Auth0 account and defining the auth0 config in environment f
 
 ```bash
 ng generate service services/auth
+# if using npx, use the following command instead
+# npx @angular/cli service services/auth
 ```
 
 This command will generate service in a file called `auth.service.ts` under `./src/services`. Now, replace the contents of this file with:
@@ -1074,6 +1086,8 @@ Now that you have created AuthService. You can create `AuthGuard`, which allows 
 
 ```bash
 ng generate guard guards/auth
+# if using npx, use the following command instead
+# npx @angular/cli guard guards/auth
 ```
 This command will generate the `auth.guard.ts` file under `/src/app/guards` directory. Update the content of the file with the following:
 
@@ -1120,6 +1134,8 @@ First, you are going to create an extra page for the player. You are going to ad
 
 ```bash
 ng g component pages/profile --module app
+# if using npx, use the following command instead
+# npx @angular/cli component pages/profile --module app
 ```
 Open the `profile.component.ts` file in `pages/profile` directory and add the following content:
 
