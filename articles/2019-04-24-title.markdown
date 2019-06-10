@@ -13,15 +13,15 @@ related:
 ---
 
 
-**TL;DR:** In this article, you will learn how to develop an audio player app using **Angular** and **RxJS**. You will handle audio operations and state of application using RxJS. To secure your application, you will use **Auth0**. If needed, you can find the final code on this [GitHub repository](https://github.com/imsingh/auth0-audio/).
+**TL;DR:** In this article, you will learn how to develop an audio player app using **Angular** and **RxJS**. You will handle audio operations and application state using RxJS. To secure your application, you will use **Auth0**. If needed, you can find the final code on this [GitHub repository](https://github.com/imsingh/auth0-audio/).
 
 # Introduction
 
-Creating an audio player is always an intimidating task. Especially if you think about managing the media's *state*, reacting to media *events*, and reflecting these changes correctly on the UI (User Interface). So, in this article, you will use Angular and Angular Material (with some other libraries) to easily solve these issues.
+Creating an audio player is always an intimidating task. Especially if you think about managing the media's *state*, reacting to media *events*, and reflecting these changes correctly on the UI (User Interface). So, in this article, you will use Angular and Angular Material (with some other libraries) to easily tackle these challenges.
 
 To handle media playback in a reactive way, you will adapt [JavaScript's `Audio` object](https://www.w3schools.com/jsref/dom_obj_audio.asp) with an RxJS *Observable* and you will also use the RxJS to manage the state of your audio player.
 
-Besides that, you will use [Auth0](https://auth0.com/) to secure your app.
+To provide a secure user experience through your application, you'll add user authentication through [Auth0](https://auth0.com/).
 
 ## Prerequisites
 
@@ -33,6 +33,8 @@ After Installing it, you will need to install Angular CLI via `npm`:
 npm install -g @angular/cli
 ```
 
+> If you are using npm v5.2+, you can use `npx` to use `@angular/cli` without installing it.
+
 ### Scaffolding the App
 After installing all the environment dependencies, you can focus on scaffolding your Angular app. To do this, issue the following command on a terminal:
 
@@ -40,14 +42,21 @@ After installing all the environment dependencies, you can focus on scaffolding 
 ng new angular-audio
 ```
 
-This command will ask you two questions:
+You can use also use `npx` to scaffold the app:
+
+```bash
+npx @angular/cli new angular-audio
+```
+
+This command will ask you three questions:
 
 1. Would you like to add Angular routing? (y/N): You can input `y`(yes) as you are going to use Angular Routing in the app.
 2. Which stylesheet format would you like to use? (Use arrow keys): Select `SCSS` from the options given.
+3. Would you like to share anonymous usage data with the Angular Team at Google under Google’s Privacy Policy at https://policies.google.com/privacy For more details and how to change this setting, see http://angular.io/analytics. (y/N): If you want to share data with Google press `y` else press `N`.
 
 ### Running the Application
 
-Before continuing, make sure you can start your application on the browser. You can simply run:
+Before continuing, make sure you can start your application in the browser. You can simply run:
 
 ```bash
 npm start
@@ -63,18 +72,18 @@ ng add @angular/material
 This command will ask you three questions:
 
 1. Choose a pre-built theme name, or "custom" for a custom theme: Choose `Indigo/Pink`
-2. Set up HammerJS for gesture recognition?: You can input `y`(yes) since we need gesture recognition.
-3. Set up browser animations for Angular Material? (Y/n): you can input `y`(yes) again because you will need Animation.
+2. Set up [HammerJS](https://hammerjs.github.io/) for gesture recognition?: You can input `y` (yes) since we need gesture recognition.
+3. Set up browser animations for Angular Material? (Y/n): you can input `y` (yes) again because you will need animation.
 
-You are also going to use `moment.js` to manipulate dates and times. Install it via `npm`:
+You are also going to use [`moment.js`](https://momentjs.com/) to manipulate dates and times. Install it via `npm`:
 
 ```bash
 npm install --save moment
 ```
 
-> Note: RxJS comes along with Angular
+> Note: RxJS comes bundled with Angular
 
-## Developing Audio Player UI using Angular Material
+## Developing the Audio Player UI using Angular Material
 
 In this section, you will design the UI of the application. In the end, your application will look like this:
 
@@ -115,11 +124,11 @@ Then, you are going to create the `app-player` component with @angular/cli:
 ```bash
 ng generate component pages/player --module app
 ```
-It will generate `player` component in `pages/player` directory.
+It will generate a `player.component.ts` file and other required files within the `src/app/pages/player/` directory.
 
 ### Audio Player HTML
 
-Inside the `./src/pages/player` directory, you will find the `player.component.html` file. In this file, you will add some HTML to define your player. As you will see, on the top, you will have a navigation bar which contains the name of the application.
+Inside the `./src/pages/player` directory, you will find the `player.component.html` file. In this file, you will add some HTML to define your player structure. As you will see, top level element is a div with `container` class. On the top, you will have a navigation bar which contains the name of the application inside `mat-toolbar`.
 
 Besides the header, you will have the div with class `content` which will have your app's logo and a `mat-list` with the list of media files.
 
@@ -127,9 +136,10 @@ Finally, in the footer, you will have two `mat-toolbar`.
 
 In the first `mat-toolbar`, you will have a `mat-slider`. This will allow the user to change the current time of the audio track. 
 
-In the second `mat-toolbar`, you will have rest of the playback controls, as follows:
+In the second `mat-toolbar`, you will have rest of the playback controls.
 
 {% highlight html %}
+{% raw %}
 <div class="container">
     <mat-toolbar color="primary" class="main-toolbar">
       <span>Audio Player</span>
@@ -183,10 +193,11 @@ In the second `mat-toolbar`, you will have rest of the playback controls, as fol
     </div>
 </div>
 
+{% endraw %}
 {% endhighlight %}
 
 
-### Styling Audio Player
+### Styling the Audio Player
 Just to improve the look and feel of your app, you will do some minor styling in the `player.component.scss` file (you can find it under `./src/pages/player/`), as shown below:
 
 ```scss
@@ -239,7 +250,7 @@ Just to improve the look and feel of your app, you will do some minor styling in
 }
 ```
 
-In order to make sure your our application compiles, open `player.component.ts` and update it with the dummy content as following:
+To ensure that your application compiles, open `player.component.ts` and update it with the following content which includes mock data:
 
 ```ts
 // ... import statements and @Component declaration ...
@@ -285,32 +296,36 @@ export class AppRoutingModule {}
 You also have to update `app.component.html` with the following content:
 
 {% highlight html %}
+{% raw %}
 <router-outlet></router-outlet>
+{% endraw %}
 {% endhighlight %}
 
-## Creating a Service to Manage the Playback
+## Creating a Service to Manage the Audio Playback
 
 After creating the Audio Player UI, you can start working on the playback feature.
 
 ### Creating Playback Observable
 
-The Observable that you are going to create is the central piece of your application. RxJS comes with a helper function named `create` to help you create custom observables. It takes `subscribe` function as an input.
+The Observable that you are going to create is the central piece of your application. RxJS comes with a helper function named `create` to help you create custom observables. It takes a `subscribe` function as an input.
 
 ```ts
 Observable.create(subscribe): Observable<any>;
 ```
 
-This `subscribe` function takes an `observer` object and returns a function. Observer objects provide three methods: `next`, `error`, and `complete`.
+This `subscribe` function takes an `observer` object and returns an `unsubscribe` function. Observer objects provide three methods: `next`, `error`, and `complete`.
 
 1. To emit a value, you can call the `observer.next` method with the desired value.
 2. In case of an error, you can use the `observer.error` function to throw the error and make the observable stop.
 3. If you no longer need the observer and there are no more values to emit, you can call the `observer.complete` method.
 
-Also, calling `Observable.create` will return an `Observable` to which you can subscribe via the `subscribe` method. This method returns a function that you can call when you want to unsubscribe from the observable.
+Also, calling `Observable.create` will return an `Observable` to which you can subscribe via the `subscribe` method, which returns a function that you can call when you want to unsubscribe from the observable.
 
 > Don't be confused with `Observable.create(subscribe)` and `Observable.subscribe()`. Former `subscribe` function is an input to `Observable.create`, which is sort of like blueprint of an observable, and latter is the one which invokes the execution of an observable.
 
-In your audio player app, you are going to create an observable to get notifications about media events like `playing`, `pause`, `timeupdate`, and so on. So, basically, you will listen to the media event's of `Audio()` inside the observable and then notify the rest of the app via the `observer.next` method.
+> To know more about Observables, take a look at [Reverse Engineering Observable](https://blog.logrocket.com/reverse-engineering-observable-4069f3853139/).
+
+In your audio player app, you are going to create an observable to get notifications about media events like `playing`, `pause`, `timeupdate`, and so on. So, basically, you will listen to the media events of `Audio` inside the observable and then notify the rest of the app via the `observer.next` method.
 
 Now that you understand why do you need an observable, you can start by creating service in your Angular app:
 
@@ -1133,6 +1148,7 @@ export class ProfileComponent implements OnInit {
 Now open the `profile.component.html` add the following content:
 
 {% highlight html %}
+{% raw %}
 <div class="container">
     <mat-toolbar color="primary" class="main-toolbar">
       <mat-icon class="back-btn" routerLink="/">arrow_back</mat-icon>
@@ -1147,6 +1163,7 @@ Now open the `profile.component.html` add the following content:
         </mat-card-content>
       </mat-card>
 </div>
+{% endraw %}
 {% endhighlight %}
 
 Finally, open the `profile.component.scss` and add the following content:
@@ -1171,6 +1188,7 @@ User can access this component at `/profile` URL.
 You also have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `mat-toolbar` in the header as follows:
 
 {% highlight html %}
+{% raw %}
 <mat-toolbar color="primary" class="main-toolbar">
   <span>Audio Player</span>
   <span class="spacer"></span>
@@ -1178,11 +1196,13 @@ You also have to update the player component by adding the Authentication UI and
   <span class="toolbar-btn" *ngIf="auth.authenticated" (click)="auth.logout()">LOGOUT</span>
   <span class="toolbar-btn" *ngIf="auth.authenticated" routerLink="/profile">PROFILE</span>
 </mat-toolbar>
-{% endhighlight }
+{% endraw %}
+{% endhighlight %}
 
 Along with Toolbar, you have to hide the playlist if user is not logged in. You can simply add `*ngIf="auth.authenticated"` to the playlist as follows:
 
 {% highlight html %}
+{% raw %}
 <mat-list color="primary" *ngIf="auth.authenticated">
   <h3 mat-subheader>Songs</h3>
   <mat-list-item *ngFor="let file of files; let i = index" (click)="openFile(file, i)">
@@ -1194,7 +1214,8 @@ Along with Toolbar, you have to hide the playlist if user is not logged in. You 
     <mat-divider></mat-divider>
   </mat-list-item>
 </mat-list>
-{% endhighlight }
+{% endraw %}
+{% endhighlight %}
 
 > Don't forget to import and inject `AuthService` in the `PlayerComponent`.
 
