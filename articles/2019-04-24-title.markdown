@@ -19,7 +19,7 @@ related:
 
 Creating an audio player is always an intimidating task. Especially if you think about managing the media's *state*, reacting to media *events*, and reflecting these changes correctly on the UI (User Interface). So, in this article, you will use Angular and Angular Material (with some other libraries) to easily tackle these challenges.
 
-To handle media playback in a reactive way, you will adapt [JavaScript's `Audio` object](https://www.w3schools.com/jsref/dom_obj_audio.asp) with an RxJS *Observable* and you will also use the RxJS to manage the state of your audio player.
+To handle media playback in a reactive way, you will wrap [JavaScript's `Audio` object](https://www.w3schools.com/jsref/dom_obj_audio.asp) with an RxJS *Observable* and you will also use the RxJS to manage the state of your audio player.
 
 To provide a secure user experience through your application, you'll add user authentication through [Auth0](https://auth0.com/).
 
@@ -91,7 +91,9 @@ In this section, you will design the UI of the application. In the end, your app
 
 ![Image of Application](https://i.imgur.com/JcFJdoW.png)
 
-Since you are going to use Angular Material Components, you need to import them inside your root `NgModules`. In order to do so, you are going to create a feature module named `MaterialModule` in the `material.module.ts` file under `./src/app` directory and add the following content:
+Since your app will use Angular Material Components, you'll need to import them inside your root `NgModule`.
+
+To do so, create a `material.module.ts` file under the `./src/app` directory and define a feature module named `MaterialModule` like so:
 
 ```ts
 import { NgModule } from '@angular/core';
@@ -119,7 +121,17 @@ const modules = [
 })
 export class MaterialModule {}
 ```
-> You have to add `MaterialModule` to the root `NgModule` to make it work.
+> You have to add `MaterialModule` to the root `NgModule` to make it work. To do so, open `app.module.ts` and import the module as follows:
+
+```ts
+// imports here
+impor { MaterialModule } from './material.module';
+@NgModule({
+    imports: [
+      MaterialModule
+    ]
+})
+```
 
 Then, you are going to create the `app-player` component using the `@angular/cli`:
 
@@ -132,15 +144,15 @@ It will generate a `player.component.ts` file and other required files within th
 
 ### Audio Player HTML
 
-Inside the `./src/pages/player` directory, you will find the `player.component.html` file. In this file, you will add some HTML to define your player structure. As you will see, top level element is a div with `container` class. On the top, you will have a navigation bar which contains the name of the application inside `mat-toolbar`.
+Inside the `./src/pages/player` directory, you will find the `player.component.html` file. In this file, you will add some HTML to define your player structure. As you will see, top level element is a div with `container` class. On the top, you will have a navigation bar which contains the name of the application inside `<mat-toolbar>`.
 
-Besides the header, you will have the div with class `content` which will have your app's logo and a `mat-list` with the list of media files.
+Below the header, you will have a `div` element with class `content` which will have your app's logo and a `<mat-list>` with the list of media files.
 
-Finally, in the footer, you will have two `mat-toolbar`. 
+Finally, the footer `div` element with class `.media-footer` will have two `<mat-toolbar>`. 
 
-In the first `mat-toolbar`, you will have a `mat-slider`. This will allow the user to change the current time of the audio track. 
+In the first `<mat-toolbar>`, you will have a `<mat-slider>`. This will allow the user to change the current time of the audio track. 
 
-In the second `mat-toolbar`, you will have rest of the playback controls.
+In the second `<mat-toolbar>`, you will have rest of the playback controls.
 
 {% highlight html %}
 {% raw %}
@@ -275,8 +287,9 @@ export class PlayerComponent {
 }
 ```
 
-### Updating Routing
-In order to see the UI, you need to configure the routing inside the `app-routing.module.ts` file to add `PlayerComponent`, as follows:
+### Updating the Router
+
+In order to see the UI, you need to configure the router inside the `app-routing.module.ts` file to use `PlayerComponent` as a route like so:
 
 ```ts
 import { NgModule } from '@angular/core';
@@ -325,13 +338,13 @@ This `subscribe` function takes an `observer` object and returns an `unsubscribe
 
 Also, calling `Observable.create` will return an `Observable` to which you can subscribe via the `subscribe` method, which returns a function that you can call when you want to unsubscribe from the observable.
 
-> Don't be confused with `Observable.create(subscribe)` and `Observable.subscribe()`. Former `subscribe` function is an input to `Observable.create`, which is sort of like blueprint of an observable, and latter is the one which invokes the execution of an observable.
+> Don't be confused with `Observable.create(subscribe)` and `Observable.subscribe()`. The `subscribe` method that you pass in to `Observable.create` is like a blueprint of an Observable and you can execute it by invoking `Observable.subscribe()` method.
 
 > To know more about Observables, take a look at [Reverse Engineering Observable](https://blog.logrocket.com/reverse-engineering-observable-4069f3853139/).
 
 In your audio player app, you are going to create an observable to get notifications about media events like `playing`, `pause`, `timeupdate`, and so on. So, basically, you will listen to the media events of `Audio` inside the observable and then notify the rest of the app via the `observer.next` method.
 
-Now that you understand why do you need an observable, you can start by creating service in your Angular app:
+Now that you understand why you need an observable, you can start by creating a service using it in your Angular app:
 
 ```bash
 ng generate service services/audio
@@ -1201,7 +1214,7 @@ User can access this component at `/profile` URL.
 > You have to add this route to `router` config in the `app-routing.module.ts` file. You also have to add `ProfileComponent` to the `declaration` and `entryComponent` arrays of `NgModule`
 
 #### Updating Player Component
-You also have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `mat-toolbar` in the header as follows:
+You also have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `<mat-toolbar>` in the header as follows:
 
 {% highlight html %}
 {% raw %}
