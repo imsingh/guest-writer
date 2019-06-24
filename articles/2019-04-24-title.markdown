@@ -12,7 +12,6 @@ related:
 - 2017-11-15-an-example-of-all-possible-elements
 ---
 
-
 **TL;DR:** In this article, you will learn how to develop an audio player app using **Angular** and **RxJS**. You will handle audio operations and application state using RxJS. To secure your application, you will use **Auth0**. If needed, you can find the final code on this [GitHub repository](https://github.com/imsingh/auth0-audio/).
 
 # Introduction
@@ -68,8 +67,6 @@ Having confirmed that you can run the basic app in the browser, you can start bu
 
 ```bash
 ng add @angular/material
-# if using npx, use the following command instead
-# npx @angular/cli add @angular/material
 ```
 This command will ask you three questions:
 
@@ -93,53 +90,48 @@ In this section, you will design the UI of the application. In the end, your app
 
 Since your app will use Angular Material Components, you'll need to import them inside your root `NgModule`.
 
-To do so, create a `material.module.ts` file under the `./src/app` directory and define a feature module named `MaterialModule` like so:
+To do so, create a `material` module using the `ng generate` command:
+
+```bash
+ng generate module material --module=app --flat
+```
+
+> `ng generate module` command creates the module with the given name, in your case name is `material`. The `--module=app` option allows you to specify in which module to import the new one, and `--flat` creates the module into root directory without creating an extra folder.
+ 
+Previous command will generate `material.module` in `/src/app` directory. Replace the content of file with the following code:
 
 ```ts
 // src/app/material.module.ts
 import { NgModule } from '@angular/core';
 import {
-    MatButtonModule,
-    MatListModule,
-    MatSliderModule,
-    MatIconModule,
-    MatToolbarModule,
-    MatCardModule
+  MatButtonModule,
+  MatListModule,
+  MatSliderModule,
+  MatIconModule,
+  MatToolbarModule,
+  MatCardModule
 } from '@angular/material';
 
 const modules = [
-    MatButtonModule,
-    MatListModule,
-    MatSliderModule,
-    MatIconModule,
-    MatToolbarModule,
-    MatCardModule
+  MatButtonModule,
+  MatListModule,
+  MatSliderModule,
+  MatIconModule,
+  MatToolbarModule,
+  MatCardModule
 ];
 
 @NgModule({
-    imports: modules,
-    exports: modules
+  imports: modules,
+  exports: modules
 })
 export class MaterialModule {}
-```
-> You have to add `MaterialModule` to the root `NgModule` to make it work. To do so, open `app.module.ts` and import the module as follows:
-
-```ts
-// imports here
-impor { MaterialModule } from './material.module';
-@NgModule({
-    imports: [
-      MaterialModule
-    ]
-})
 ```
 
 Then, you are going to create the `app-player` component using the `@angular/cli`:
 
 ```bash
 ng generate component pages/player --module app
-# If you are using npx, use the following command
-# npx @angular/cli generate component pages/player --module app
 ```
 It will generate a `player.component.ts` file and other required files within the `src/app/pages/player/` directory.
 
@@ -157,6 +149,7 @@ In the second `<mat-toolbar>`, you will have rest of the playback controls.
 
 {% highlight html %}
 {% raw %}
+<!-- src/app/pages/player/player.component.html -->
 <div class="container">
     <mat-toolbar color="primary" class="main-toolbar">
       <span>Audio Player</span>
@@ -218,6 +211,7 @@ In the second `<mat-toolbar>`, you will have rest of the playback controls.
 Just to improve the look and feel of your app, you will do some minor styling in the `player.component.scss` file (you can find it under `./src/pages/player/`), as shown below:
 
 ```scss
+// src/app/pages/player/player.component.scss
 .container {
   .main-toolbar {
     .spacer {
@@ -270,6 +264,7 @@ Just to improve the look and feel of your app, you will do some minor styling in
 To ensure that your application compiles, open `player.component.ts` and update it with the following content which includes mock data:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   files: Array<any> = [
@@ -293,6 +288,7 @@ export class PlayerComponent {
 In order to see the UI, you need to configure the router inside the `app-routing.module.ts` file to use `PlayerComponent` as a route like so:
 
 ```ts
+// src/app/app-routing.module.ts
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { PlayerComponent } from './pages/player/player.component';
@@ -306,12 +302,12 @@ const routes: Routes = [
     imports: [
       RouterModule.forRoot(routes)
     ],
-    exports: [ RouterModule],
+    exports: [RouterModule],
 })
 export class AppRoutingModule {}
 ```
 
-You also have to update `app.component.html` with the following content:
+You also have to replace the content of `app.component.html` with `<router-outlet></router-outlet>` as following:
 
 {% highlight html %}
 {% raw %}
@@ -319,16 +315,22 @@ You also have to update `app.component.html` with the following content:
 {% endraw %}
 {% endhighlight %}
 
+At this point, you can actually see how the app looks like. Go ahead and spin up the development server with `npm start` and open the browser at `localhost:4200`. You should see this:
+
+![Image of Application](https://i.imgur.com/87L3jJs.png)
+
+However, you will observe that none of our buttons are working. Let's start adding functionality to our application.
+
 ## Creating a Service to Manage the Audio Playback
 
 After creating the Audio Player UI, you can start working on the playback feature.
 
 ### Creating Playback Observable
 
-The Observable that you are going to create is the central piece of your application. RxJS comes with a helper function named `create` to help you create custom observables. It takes a `subscribe` function as an input.
+The Observable that you are going to create is the central piece of your application. RxJS comes with an `Observable` constructor to help you create custom observables. It takes a `subscribe` function as an input and returns an `Observable`.
 
 ```ts
-Observable.create(subscribe): Observable<any>;
+new Observable(subscribe): Observable<T>;
 ```
 
 This `subscribe` function takes an `observer` object and returns an `unsubscribe` function. Observer objects provide three methods: `next`, `error`, and `complete`.
@@ -337,9 +339,7 @@ This `subscribe` function takes an `observer` object and returns an `unsubscribe
 2. In case of an error, you can use the `observer.error` function to throw the error and make the observable stop.
 3. If you no longer need the observer and there are no more values to emit, you can call the `observer.complete` method.
 
-Also, calling `Observable.create` will return an `Observable` to which you can subscribe via the `subscribe` method, which returns a function that you can call when you want to unsubscribe from the observable.
-
-> Don't be confused with `Observable.create(subscribe)` and `Observable.subscribe()`. The `subscribe` method that you pass in to `Observable.create` is like a blueprint of an Observable and you can execute it by invoking `Observable.subscribe()` method.
+> Don't be confused with `new Observable(subscribe)` and `Observable.subscribe()`. The `subscribe` method that you pass in to `Observable` constructor is like a blueprint of an Observable and you can execute it by invoking `Observable.subscribe()` method.
 
 > To know more about Observables, take a look at [Reverse Engineering Observable](https://blog.logrocket.com/reverse-engineering-observable-4069f3853139/).
 
@@ -349,14 +349,12 @@ Now that you understand why you need an observable, you can start by creating a 
 
 ```bash
 ng generate service services/audio
-# if using npx, use the following command instead
-# npx @angular/cli generate service services/audio
 ```
 
-This will generate service in a file called `audio.service.ts` under `./src/services/audio/` and this service have to be added to `NgModule` in `app.module.ts`. Replace the contents of the `audio.service.ts` file with:
-
+This will generate service in a file called `audio.service.ts` under `./src/services/audio/`. Replace the contents of the `audio.service.ts` file with:
 
 ```ts
+// src/app/services/audio.service.ts
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -373,7 +371,7 @@ export class AudioService {
   ];
 
   private streamObservable(url) {
-    return Observable.create(observer => {
+    new Observable(observer => {
       // Play audio
       this.audioObj.src = url;
       this.audioObj.load();
@@ -411,6 +409,7 @@ export class AudioService {
 Now, whenever you want to play a new audio file, you will create this observable and listen to all these media events. You will do this via a new method called `playStream()` that you are going to add to the `AudioService` class:
 
 ```ts
+// src/app/services/audio.service.ts
 // ... import statements ...
 
 export class AudioService {
@@ -427,6 +426,7 @@ export class AudioService {
 Now that you have the basis of the `AudioService`, you can develop the rest of its methods: `play`, `pause`, `stop`, `seekTo`, and `formatTime`. As their implementation is self-explanatory, you can simply add these five methods to the `AudioService` service as shown below:
 
 ```ts
+// src/app/services/audio.service.ts
 // ... import statements ...
 
 export class AudioService {
@@ -465,13 +465,12 @@ In order to take more advantage of TypeScript's type checking; first, you are go
 
 ```bash
 ng g interface interfaces/streamState
-# if using npx, use the following command instead
-# npx @angular/cli generate interface interfaces/streamState
 ```
 
 This will generate an interface in a file called `stream-state.ts` under `./src/interfaces/`. Replace the content of the file with the following:
 
 ```ts
+// src/app/interfaces/stream-state.ts
 export interface StreamState {
   playing: boolean;
   readableCurrentTime: string;
@@ -498,6 +497,7 @@ This list explains what these values mean:
 Now you are going to import the `StreamState` interface and create a `state` object with the initial state as following:
 
 ```ts
+// src/app/services/audio.service.ts
 import { StreamState } from '../interfaces/stream-state';
 
 export class AudioService {
@@ -518,6 +518,7 @@ export class AudioService {
 You will also need a way to emit state changes. So you are going to use `BehaviorSubject` named `stateChange`. You will also provide and emit the default value of state as shown below. Also, the state is dependent on Audio Events like `playing`, `pause` and so on. You are going to update state by reacting to those events using the `updateStateEvents` method. The `updateStateEvent` method takes an audio event and set `this.state`. In the end, you are going to emit the latest state via `stateChange` subject as shown:
 
 ```ts
+// src/app/services/audio.service.ts
 export class AudioService {
 
   private stateChange: BehaviorSubject<StreamState> = new BehaviorSubject(this.state);
@@ -554,6 +555,7 @@ export class AudioService {
 When you need to reset the state. You can do it using `resetState` method as following:
 
 ```ts
+// src/app/services/audio.service.ts
 private resetState() {
   this.state = {
     playing: false,
@@ -569,12 +571,13 @@ private resetState() {
 
 ### Reading the state
 
-You are going to need a method to share the `stateChange` BehaviorSubject to the rest of the application as follows:
+You are going to need a method to share the `stateChange` BehaviorSubject to the rest of the application. However, providing access to Subject outside the service can be dangerous. So you will use `asObservable` method of `BehaviorSubject` to only return `Observable` part as follows:
 
 ```ts
+// src/app/services/audio.service.ts
 export class AudioService {
-  getState(): BehaviorSubject<any> {
-    return this.stateChange;
+  getState(): Observable<StreamState> {
+    return this.stateChange.asObservable();
   }
 }
 ```
@@ -584,8 +587,9 @@ export class AudioService {
 Finally, you need to adapt the `streamObservable` method by firing `updateStateEvent` method inside it and also resetting the state during unsubscription. The updated streamObservable looks like this:
 
 ```ts
+// src/app/services/audio.service.ts
 private streamObservable(url) {
-  return Observable.create(observer => {
+  return new Observable(observer => {
     // Play audio
     this.audioObj.src = url;
     this.audioObj.load();
@@ -618,13 +622,12 @@ After managing the state of the application, you will need to create a service t
 
 ```bash
 ng generate service services/cloud
-# if using npx, use the following command instead
-# npx @angular/cli generate service services/cloud
 ```
 
 This command will generate service in a file called `cloud.service.ts` under `./src/services`. Now, replace the contents of this file with:
 
 ```ts
+// src/app/services/cloud.service.ts
 import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -669,22 +672,23 @@ To help you control your audio player user interface, you will implement a contr
 
 You will implement the following methods:
 
-* `constructor`: creates an instance of Player Component, then it will grab all the media files from the cloud service and finally it will start listening to `stateChange` Subject from `AudioService`
+* `constructor`: creates an instance of Player Component, then it will grab all the media files from the cloud service and finally it will start listening to state updates from `AudioService` via `getState` method
 
-* `playStream`: this method will subscribe to AudioService.playStream to start playing an audio file for the first time.
-* `play`: this method will restart the audio playback.
-* `pause`: this method will pause the audio playback.
-* `stop`: this method will stop the audio playback.
-* `openFile`: this method will grab the audio file, set it as the current file and then play it using the `playStream` method.
-* `next`: this method will play the next track from the audio playlist.
-* `previous`: this method will play the previous track from the audio playlist.
-* `isFirstPlaying`: this method will check if the first track is playing or not.
-* `isLastPlaying`: this method will check if the last track is playing or not.
-* `onSliderChangeEnd`: this method will fire when the user use slider and `seekTo` that part of the music.
+* `playStream`: it will subscribe to AudioService.playStream to start playing an audio file for the first time
+* `play`: it will restart the audio playback
+* `pause`: it will pause the audio playback
+* `stop`: it will stop the audio playback
+* `openFile`: it will grab the audio file, set it as the current file and then play it using the `playStream` method
+* `next`: it will play the next track from the audio playlist
+* `previous`: it will play the previous track from the audio playlist
+* `isFirstPlaying`: it will check if the first track is playing or not
+* `isLastPlaying`: it will check if the last track is playing or not
+* `onSliderChangeEnd`: it will fire when the user use slider and `seekTo` that part of the music
 
 First, you will need to import required files and create `files`, `state`, and `currentFile` properties as shown:
 
 ```ts
+// src/app/pages/player/player.component.ts
 import { Component } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { CloudService } from '../../services/cloud.service';
@@ -703,9 +707,10 @@ export class PlayerComponent {
 The constructor will create an instance of `PlayerComponent` and fetch the media files and then assign them to `this.files` property. It will also subscribe to state changes and assign it to `this.state` property.
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
-  constructor(private audioService: AudioService, cloudService: CloudService) {
+  constructor(public audioService: AudioService, public cloudService: CloudService) {
     // get media files
     cloudService.getFiles().subscribe(files => {
       this.files = files;
@@ -723,6 +728,7 @@ export class PlayerComponent {
 Then, the `playstream` method can fire the `playStream` method of your `AudioService`. This method on the service returns an observable that you will use to subscribe and start listening to media events like `canplay`, `playing`, etc. However, you don't really need those values or events because you can read them using the `stateChange` subject. This method is used to start observable and audio playback.
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...\  
@@ -740,6 +746,7 @@ export class PlayerComponent {
 Whenever the user clicks on a media file, the `openFile` method will be fired. Then, this method will fire the `playStream` method with the `URL` of the `file` chosen.
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -755,6 +762,7 @@ export class PlayerComponent {
 Once the `playStream` method is fired, the media playback is initiated. As such, your users might want to pause the playback. For that, you will implement the `pause` method as follows:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -768,6 +776,7 @@ export class PlayerComponent {
 It's also true that users might want to start playing the media again. For that, you will add the following:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -781,6 +790,7 @@ export class PlayerComponent {
 Then, to stop the media, you will add the following method:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -795,6 +805,7 @@ export class PlayerComponent {
 Also, to let your users move to the next music, you will define the following method:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -811,6 +822,7 @@ export class PlayerComponent {
 Similarly, you will need to provide a method to play the previous track:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -827,6 +839,7 @@ export class PlayerComponent {
 Then, you will need two helper methods to check if the music being played is the first or the last track from the playlist. You use these methods to disable and enable the UI buttons:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -845,6 +858,7 @@ export class PlayerComponent {
 Also, you will want to enable your users to do seek operations. So, when the seek operation ends, Angular will fire the `onSliderChangeEnd` method and, in it, you can fetch the time selected by the user and seekTo that time:
 
 ```ts
+// src/app/pages/player/player.component.ts
 // ... import statements and @Component declaration ...
 export class PlayerComponent {
   // ...constructor and other methods ...
@@ -854,54 +868,11 @@ export class PlayerComponent {
 }
 ```
 
-### Updating `AppModule`
-The final steps, before being able to use your app for the first time, start with importing all the required libraries inside the `app.module.ts` file:
-
-```ts
-import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
-// components
-import { AppComponent } from './app.component';
-import { PlayerComponent } from './pages/player/player.component';
-
-// modules
-import { MaterialModule } from './material.module';
-import { AppRoutingModule } from './app-routing.module';
-
-// all services
-import { AudioService } from './services/audio.service';
-import { CloudService} from './services/cloud.service';
-
-@NgModule({
-  declarations: [
-    AppComponent,
-    PlayerComponent,
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    MaterialModule,
-    AppRoutingModule
-  ],
-  providers: [
-    AudioService,
-    CloudService,
-  ],
-  entryComponents: [
-    PlayerComponent,
-  ],
-  bootstrap: [AppComponent]
-})
-export class AppModule { }
-
-```
 ### Building and Running the Audio Player
 After implementing the application, you can run it via @angular/cli:
 
 ```
-ng serve
+npm start
 ```
 The above command will spin up a web server at `http://localhost:4200/`.
 
@@ -927,40 +898,41 @@ npm install --save auth0-js
 Now you are going to add Auth0 Configuration to the `environment.ts` file under `src/environment` directory:
 
 ```ts
+// src/environment/environment.ts
 export const environment = {
   production: false,
   auth0: {
     clientID: '[YOUR_AUTH0_CLIENT_ID]',
     domain: '[YOUR_AUTH0_DOMAIN]',
-    redirectUri: '[REDIRECT_URI]',
-    logoutUrl: '[LOGOUT_URL]'
+    redirectUri: 'http://localhost:4200',
+    logoutUrl: 'http://localhost:4200'
   }
 };
 ```
 This list explains what these values mean:
 
-* `clientID`: They are the *Client Id* property available in your Auth0 Application.
+* `clientID`: the *Client Id* property available in your Auth0 Application.
 * `domain`: your Auth0 Domain (e.g.`your-domain.auth0.com`
-* `redirectUri`: It's the URL where the user will be redirected after login. You can use the same URL as your callback URL here.
-* `logoutUrl`: It's your URL that you want your user to direct when he/she log out.
+* `redirectUri`: the URL where the user will be redirected after login. You can use the same URL as your callback URL here
+* `logoutUrl`: the URL that you want your user to direct when he/she log out.
 
 ### Auth Service
 After creating your Auth0 account and defining the Auth0 config in the environment file, you will need to define an authentication service in your Angular app. To do so, you will use `@angular/cli`:
 
 ```bash
 ng generate service services/auth
-# if using npx, use the following command instead
-# npx @angular/cli service services/auth
 ```
 
 This command will generate service in a file called `auth.service.ts` under `./src/services`. Now, replace the contents of this file with:
 
 ```ts
+// src/app/services/auth.service.ts
 import { Injectable } from '@angular/core';
 import * as auth0 from 'auth0-js';
 import { environment } from '../../environments/environment';
 import { Observable, BehaviorSubject, bindNodeCallback, of } from 'rxjs';
 import { Router } from '@angular/router';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -1077,26 +1049,25 @@ export class AuthService {
 ```
 
 To better understand how the code above works, take a look into the following explanation:
-* `auth0`: this property is an instance of `auth0-WebAuth`, which you will use for the authentication.
-* `_authFlag && _userProfileFlag`: these are the localstorage keys for storing authentication and user profile data.
-* `token$`: this is an `Observable` which emits access token.
-* `userProfile$`: this `BehaviorSubject` creates a stream for the profile data.
-* `onAuthSuccessUrl && onAuthFailureUrl`: these two URLs are the URLs which Auth0 will redirect to after success and failure of authentication respectively.
-* `logoutUrl`: it's the URL where the user is redirected after log out.
-* `parseHash$`: it's an `Observable` which parse the hash and gives you back the auth result. 
-* `checkSession$`: this `Observable` is used to check the session and then renew the token if it is required.
+
+* `auth0`: is an instance of `auth0-WebAuth`, which you will use for the authentication
+* `_authFlag && _userProfileFlag`: are the localstorage keys for storing authentication and user profile data
+* `token$`: an `Observable` which emits access token
+* `userProfile$`: this `BehaviorSubject` creates a stream for the profile data
+* `onAuthSuccessUrl && onAuthFailureUrl`: the URLs which Auth0 will redirect to after success and failure of authentication respectively
+* `logoutUrl`: the URL where the user is redirected after log out
+* `parseHash$`: an `Observable` which parse the hash and gives you back the auth result
+* `checkSession$`: an `Observable` use to check the session and then renew the token if it is required
 
 Now, take a look at the methods of the service above:
 
-* `constructor`: In the constructor, you are going to check if there is any user information stored in `localstorage`. If yes, then you will emit it via `userProfile$` BehaviorSubject.
-* `login()`: In the login method, you authorize the user.
+* `constructor`: In the constructor, you are going to check if there is any user information stored in `localstorage`. If yes, then you will emit it via `userProfile$` BehaviorSubject
+* `login()`: In the login method, you authorize the user
 * `handleLoginCallback()`: After authentication, this method is going to be fired. It uses `parseHash$` Observable to parse the auth result and then it sets the authentication state using `this._setAuth` method and finally redirect to `onAuthSuccessUrl`
-* `_setAuth()`: this method takes `authResult` from parsed Auth data and initializes `token$`. It sets the Auth State in localstorage along with userProfile data.
-* `authenticated()`: this getter method is used to check if the user is authenticated or not using localstorage flag.
-* `renewAuth()`: this method checks if the user is authenticated or not and then check session if it's valid or not and set's auth state respectively.
-* `logout()`: it logs out the user by removing auth state and user data from localstorage. It also calls the `auth0.logout` method which redirects the user to given `logoutUrl`.
-
-> You have to add AuthService to the `providers` array of `NgModule`.
+* `_setAuth()`: takes `authResult` from parsed Auth data and initializes `token$`. sets the Auth State in localstorage along with userProfile data
+* `authenticated()`: is used to check if the user is authenticated or not using localstorage flag
+* `renewAuth()`: checks if the user is authenticated or not and then check session if it's valid or not and set's auth state respectively
+* `logout()`: it logs out the user by removing auth state and user data from localstorage. It also calls the `auth0.logout` method which redirects the user to given `logoutUrl`
 
 ### Auth Guard
 
@@ -1104,12 +1075,11 @@ Now that you have created AuthService. You can create `AuthGuard`, which allows 
 
 ```bash
 ng generate guard guards/auth
-# if using npx, use the following command instead
-# npx @angular/cli guard guards/auth
 ```
 This command will generate the `auth.guard.ts` file under `/src/app/guards` directory. Update the content of the file with the following:
 
 ```ts
+// src/app/guards/auth.guard.ts
 import { Injectable } from '@angular/core';
 import {
   CanActivate,
@@ -1120,7 +1090,9 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthGuard implements CanActivate {
   constructor(private authService: AuthService, private router: Router) {}
 
@@ -1141,8 +1113,6 @@ export class AuthGuard implements CanActivate {
 
 It basically checks if the user is logged in or not. If the user is logged in, it allows the user to access the given route otherwise redirect the user to `/` route.
 
-> You have to add AuthGuard to the `providers` array of `NgModule`.
-
 ### Updating the UI
 
 Now that you have created the `AuthService` and `AuthGuard`, you can use them to add authentication to the player.
@@ -1152,12 +1122,11 @@ First, you are going to create an extra page for the player. You are going to ad
 
 ```bash
 ng g component pages/profile --module app
-# if using npx, use the following command instead
-# npx @angular/cli component pages/profile --module app
 ```
 Open the `profile.component.ts` file in `pages/profile` directory and add the following content:
 
 ```ts
+// src/app/pages/profile/profile.component.ts
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from 'src/app/services/auth.service';
 
@@ -1183,6 +1152,7 @@ Now open the `profile.component.html` add the following content:
 
 {% highlight html %}
 {% raw %}
+<!-- src/app/pages/profile/profile.component.html -->
 <div class="container">
     <mat-toolbar color="primary" class="main-toolbar">
       <mat-icon class="back-btn" routerLink="/">arrow_back</mat-icon>
@@ -1203,26 +1173,40 @@ Now open the `profile.component.html` add the following content:
 Finally, open the `profile.component.scss` and add the following content:
 
 ```scss
+// src/app/pages/profile/profile.component.scss
 .back-btn {
-    margin-right:5px;
-    cursor: pointer;
+  margin-right:5px;
+  cursor: pointer;
 }
 
 .profile-card {
-    margin:20px;
-    max-width: 400px;
+  margin:20px;
+  max-width: 400px;
 }
 ```
 
 User can access this component at `/profile` URL.
 
-> You have to add this route to `router` config in the `app-routing.module.ts` file. You also have to add `ProfileComponent` to the `declaration` and `entryComponent` arrays of `NgModule`
+You have to add this route to `router` config in the `app-routing.module.ts` file as follows:
+
+```ts
+// src/app/app-routing.module.ts
+// ... imports statements
+const routes: Routes = [
+    { path: '', component: PlayerComponent },
+    { path: 'profile', component: ProfileComponent },
+    { path: '**', redirectTo: '' }
+];
+
+// ... AppRoutingModule class
+```
 
 #### Updating Player Component
 You also have to update the player component by adding the Authentication UI and also link to the Profile page. You are going to update `player.component.html` by adding the `<mat-toolbar>` in the header as follows:
 
 {% highlight html %}
 {% raw %}
+<!-- src/app/pages/player/player.component.html -->
 <mat-toolbar color="primary" class="main-toolbar">
   <span>Audio Player</span>
   <span class="spacer"></span>
@@ -1237,6 +1221,7 @@ Along with Toolbar, you have to hide the playlist if user is not logged in. You 
 
 {% highlight html %}
 {% raw %}
+<!-- src/app/pages/player/player.component.html -->
 <mat-list color="primary" *ngIf="auth.authenticated">
   <h3 mat-subheader>Songs</h3>
   <mat-list-item *ngFor="let file of files; let i = index" (click)="openFile(file, i)">
@@ -1251,13 +1236,26 @@ Along with Toolbar, you have to hide the playlist if user is not logged in. You 
 {% endraw %}
 {% endhighlight %}
 
-> Don't forget to import and inject `AuthService` in the `PlayerComponent`.
+Also, you have to inject the AuthService inside `PlayerComponent` as follows:
+
+```ts
+// src/app/pages/player/player.component.ts
+// ... import statements and @Component Decorator
+constructor(public audioService: AudioService, 
+  public cloudService: CloudService, 
+  public auth: AuthService) {
+ // ... constructor code
+}
+
+// ... rest of methods
+```
 
 ### Updating AppComponent
 
 Finally, you have to update the `app.component.ts` file to handle authentication as follows:
 
 ```ts
+// src/app/app.component.ts
 import { Component } from '@angular/core';
 import { AuthService } from './services/auth.service';
 
@@ -1272,21 +1270,18 @@ export class AppComponent {
     auth.handleLoginCallback();
   }
 }
-```
-
+``` 
 
 #### Running
 
 You can run the application using `@angular/cli`:
 
 ```bash
-ng serve
+npm start
 ```
 
 ## Conclusion and Next Steps
 
-In this article, you created an audio player app with Angular. You used RxJS to develop audio playback features and state management. Besides that, you also used Auth0 to handle user authentication in your  app. With this, you have finished developing the application with static audio content.
+In this article, you created an audio player app with Angular. You used RxJS to develop audio playback features and state management. Besides that, you also used Auth0 to handle user authentication in your app. With this, you have finished developing the application with static audio content.
 
-/** comment About Next part or further instructions here **/ 
-
-I hope you enjoyed this article. Stay tuned for the next part!
+I hope you enjoyed this article. See you until next time!
